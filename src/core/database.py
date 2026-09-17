@@ -124,4 +124,65 @@ def init_db():
             INDEX idx_sus_mode (test_mode)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """)
+
+        # 6. Tabla de Cuestionario Comparativo Simultáneo (Pre-test vs Post-test)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS comparative_surveys (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            participant_code VARCHAR(50) NOT NULL UNIQUE,
+            pre_q1 INT NOT NULL,
+            pre_q2 INT NOT NULL,
+            pre_q3 INT NOT NULL,
+            pre_q4 INT NOT NULL,
+            pre_q5 INT NOT NULL,
+            pre_q6 INT NOT NULL,
+            pre_q7 INT NOT NULL,
+            pre_q8 INT NOT NULL,
+            pre_q9 INT NOT NULL,
+            pre_q10 INT NOT NULL,
+            post_q1 INT NOT NULL,
+            post_q2 INT NOT NULL,
+            post_q3 INT NOT NULL,
+            post_q4 INT NOT NULL,
+            post_q5 INT NOT NULL,
+            post_q6 INT NOT NULL,
+            post_q7 INT NOT NULL,
+            post_q8 INT NOT NULL,
+            post_q9 INT NOT NULL,
+            post_q10 INT NOT NULL,
+            pre_sus_score FLOAT NOT NULL,
+            post_sus_score FLOAT NOT NULL,
+            diff_sus_score FLOAT NOT NULL,
+            pre_adjective VARCHAR(50) NOT NULL,
+            post_adjective VARCHAR(50) NOT NULL,
+            heuristic_error_pre INT DEFAULT 3,
+            heuristic_error_post INT DEFAULT 5,
+            heuristic_seats_pre INT DEFAULT 3,
+            heuristic_seats_post INT DEFAULT 5,
+            heuristic_timer_pre INT DEFAULT 2,
+            heuristic_timer_post INT DEFAULT 5,
+            preferred_system VARCHAR(50) DEFAULT 'Prototipo',
+            comments TEXT NULL,
+            submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_comp_part (participant_code)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """)
+        # 6. Migraciones seguras para columnas complementarias de métricas de tesis
+        def add_column_if_not_exists(table, column, col_def):
+            cursor.execute("""
+            SELECT COLUMN_NAME FROM information_schema.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s
+            """, (table, column))
+            if not cursor.fetchone():
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_def};")
+                logger.info(f"Columna {column} agregada a la tabla {table}.")
+
+        add_column_if_not_exists('telemetry_sessions', 'taps_count', 'INT DEFAULT 0')
+        add_column_if_not_exists('telemetry_sessions', 'notes', 'TEXT NULL')
+        add_column_if_not_exists('telemetry_step_durations', 'taps_count', 'INT DEFAULT 0')
+        add_column_if_not_exists('participants', 'cinema_frequency', 'VARCHAR(50) NULL')
+        add_column_if_not_exists('participants', 'notes', 'TEXT NULL')
+        add_column_if_not_exists('participants', 'is_active', 'BOOLEAN DEFAULT FALSE')
+        add_column_if_not_exists('participants', 'last_active_at', 'TIMESTAMP NULL')
+
         logger.info("Tablas de MySQL verificadas y listas con éxito.")
